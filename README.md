@@ -28,6 +28,8 @@ Stay tuned.
 - Emscripten - run make (you need to set path for emsdk tools first)
 - Cmake - just run cmake then make.
 
+![Alt text](/screenshot/frameless.png?raw=true)
+
 ![Alt text](/screenshot/screenshot_02.png?raw=true)
 
 ![Alt text](/screenshot/SDL_gui.png?raw=true)

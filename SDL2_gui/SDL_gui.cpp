@@ -43,6 +43,99 @@ static std::vector<GUI_UserMessage> user_message_queue;
 
 static int statusBarHeight = 0;
 
+
+SDL_HitTestResult HitTestCallback(SDL_Window* win, const SDL_Point* area, void* data) {
+	//printf("Hittest\n");
+
+	int winWidth, winHeight;
+	SDL_GetWindowSize(win, &winWidth, &winHeight);
+
+	const int RESIZE_AREA = 4;
+	const int RESIZE_AREAC = RESIZE_AREA * 2;
+
+	// Resize top
+	if (area->x < RESIZE_AREAC && area->y < RESIZE_AREAC) return SDL_HITTEST_RESIZE_TOPLEFT;
+	if (area->x > winWidth - RESIZE_AREAC && area->y < RESIZE_AREAC) return SDL_HITTEST_RESIZE_TOPRIGHT;
+	if (area->x < RESIZE_AREA) return SDL_HITTEST_RESIZE_LEFT;
+	if (area->y < RESIZE_AREA) return SDL_HITTEST_RESIZE_TOP;
+
+	// Title bar
+	if (area->y < 22 && area->x < winWidth - 128) return SDL_HITTEST_DRAGGABLE;
+
+	if (area->x < RESIZE_AREAC && area->y > winHeight - RESIZE_AREAC) return SDL_HITTEST_RESIZE_BOTTOMLEFT;
+	if (area->x > winWidth - RESIZE_AREAC && area->y > winHeight - RESIZE_AREAC) return SDL_HITTEST_RESIZE_BOTTOMRIGHT;
+	if (area->x > winWidth - RESIZE_AREA) return SDL_HITTEST_RESIZE_RIGHT;
+	if (area->y > winHeight - RESIZE_AREA) return SDL_HITTEST_RESIZE_BOTTOM;
+
+	//printf("SDL_HITTEST_NORMAL\n");
+	return SDL_HITTEST_NORMAL;
+}
+
+
+bool Maximized(HWND hwnd) {
+	WINDOWPLACEMENT placement;
+	if (!::GetWindowPlacement(hwnd, &placement)) {
+		return false;
+	}
+
+	return placement.showCmd == SW_MAXIMIZE;
+}
+
+void AdjustMaximizedClientRect(HWND window, RECT& rect) {
+	if (!Maximized(window)) {
+		return;
+	}
+
+	auto monitor = ::MonitorFromWindow(window, MONITOR_DEFAULTTONULL);
+	if (!monitor) {
+		return;
+	}
+
+	MONITORINFO monitor_info{};
+	monitor_info.cbSize = sizeof(monitor_info);
+	if (!::GetMonitorInfoW(monitor, &monitor_info)) {
+		return;
+	}
+
+	// when maximized, make the client area fill just the monitor (without task bar) rect,
+	// not the whole window rect which extends beyond the monitor.
+	rect = monitor_info.rcWork;
+}
+
+
+int GUI_SDLEventWatcher(void* userData, SDL_Event* event)
+{
+	if (event->type != SDL_SYSWMEVENT)
+	{
+		return 0;
+	}
+
+	SDL_SysWMinfo wmInfo;
+	SDL_VERSION(&wmInfo.version);
+	SDL_GetWindowWMInfo(GUI_window, &wmInfo);
+	HWND handle = wmInfo.info.win.window;
+
+	auto winMsg = event->syswm.msg->msg.win;
+
+	switch (winMsg.msg)
+	{
+	case WM_NCCALCSIZE:
+	{
+		if (winMsg.wParam == TRUE /* && window.borderless*/) {
+			auto& params = *reinterpret_cast<NCCALCSIZE_PARAMS*>(winMsg.lParam);
+			AdjustMaximizedClientRect(handle, params.rgrc[0]);
+			return 0;
+		}
+		break;
+	}
+	default:
+	{
+		break;
+	}
+	}
+	return 0;
+}
+
 int GUI_Init( const char* title, int expectedWidth, int expectedHeight ) {
     // Get Sccreen size
     SDL_DisplayMode dm;
@@ -52,6 +145,8 @@ int GUI_Init( const char* title, int expectedWidth, int expectedHeight ) {
         exit(1);
     }
     SDL_Log("Display (DM): %d %d\n", dm.w, dm.h);
+
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "2");
     
     //Now create a window with title "SDL" at 0, 0 on the screen with w:800 h:600 and show it
     // ::SDL_WINDOW_FULLSCREEN,    ::SDL_WINDOW_OPENGL,
@@ -72,7 +167,7 @@ int GUI_Init( const char* title, int expectedWidth, int expectedHeight ) {
     int cx = 0;
     int cy = 0;
 #else
-    int style = SDL_WINDOW_OPENGL|SDL_WINDOW_ALLOW_HIGHDPI|SDL_WINDOW_RESIZABLE;
+    int style = SDL_WINDOW_OPENGL|SDL_WINDOW_ALLOW_HIGHDPI|SDL_WINDOW_RESIZABLE| SDL_WINDOW_BORDERLESS;
     int cx = (dm.w - expectedWidth) / 2;
     int cy = (dm.h - expectedHeight) / 2;
 #endif
@@ -82,6 +177,11 @@ int GUI_Init( const char* title, int expectedWidth, int expectedHeight ) {
         printf("SDL_CreateRenderer Error\n");
         exit(1);
     }
+
+	SDL_SetWindowHitTest(GUI_window, &HitTestCallback, nullptr);
+
+	SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
+	SDL_AddEventWatch(&GUI_SDLEventWatcher, NULL);
 
     //Create a renderer that will draw to the window, -1 specifies that we want to load whichever
     //video driver supports the flags we're passing
@@ -94,8 +194,6 @@ int GUI_Init( const char* title, int expectedWidth, int expectedHeight ) {
         exit(1);
     }
 
-
-    
     SDL_GetWindowSize(GUI_window, &GUI_windowWidth, &GUI_windowHeight);
     SDL_Log("given: %d %d\n", GUI_windowWidth, GUI_windowHeight);
 

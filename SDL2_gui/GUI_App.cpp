@@ -51,6 +51,7 @@ GUI_App::GUI_App( int Orientation, std::string title, int expectedWidth, int exp
 topView(NULL),
 width(0),
 height(0),
+titleBar(NULL),
 topBar(NULL),
 statusBar(NULL),
 contentView(NULL),
@@ -120,9 +121,13 @@ isMenuShow(false)
         options |= GUI_APP_CONTENT_VIEW;
     }
 
-    if( options & GUI_APP_TOP_BAR ) {
-        createTopBar(options);
-    }
+	if (options & GUI_APP_TOP_BAR) {
+		createTitleBar(options);
+	}
+
+    //if( options & GUI_APP_TOP_BAR ) {
+    //    createTopBar(options);
+    //}
     if( options & GUI_APP_MENUBAR ) {
         createMenuBar(options);
     }
@@ -146,6 +151,11 @@ GUI_App::~GUI_App() {
 
 void GUI_App::run() {
     GUI_Run();
+}
+
+void GUI_App::createTitleBar(int options) {
+	titleBar = GUI_TitleBar::create(topView, title.c_str());
+	titleBar->setSaftyPaddingFlag(2 | 8);
 }
 
 void GUI_App::createTopBar( int options ) {
@@ -192,26 +202,26 @@ void GUI_App::createMenu( int options ) {
 
     menuView->close();
 
-    menuButton = GUI_Button::create(topBar->contentView, NULL, kIcon_solid_bars);
-    int align(GUI_ALIGN_VCENTER);
-    if((options & GUI_APP_MENU_LEFT) || (options & GUI_APP_MENU_LEFT_TOP) || (options & GUI_APP_MENU_LEFT_BOTTOM))
-        align |= GUI_ALIGN_LEFT;
-    else
-        align |= GUI_ALIGN_RIGHT;
-    menuButton->setAlign(align);
-    menuButton->setMargin(0, 0, 0, 5 );
-    menuButton->setBackgroundColor( cClear );
-    menuButton->setTextColor( cWhite );
-    menuButton->setBorder( 0 );
-    menuButton->showInteract = false;
-    menuButton->setCallback([=](GUI_View *bt) {
-        if( this->menuView->isOpen ) {
-            this->menuView->close( GUI_AppMenuCollapseTime );
-        }
-        else {
-            this->menuView->open( GUI_AppMenuCollapseTime );
-        }
-    });
+    //menuButton = GUI_Button::create(topBar->contentView, NULL, kIcon_solid_bars);
+    //int align(GUI_ALIGN_VCENTER);
+    //if((options & GUI_APP_MENU_LEFT) || (options & GUI_APP_MENU_LEFT_TOP) || (options & GUI_APP_MENU_LEFT_BOTTOM))
+    //    align |= GUI_ALIGN_LEFT;
+    //else
+    //    align |= GUI_ALIGN_RIGHT;
+    //menuButton->setAlign(align);
+    //menuButton->setMargin(0, 0, 0, 5 );
+    //menuButton->setBackgroundColor( cClear );
+    //menuButton->setTextColor( cWhite );
+    //menuButton->setBorder( 0 );
+    //menuButton->showInteract = false;
+    //menuButton->setCallback([=](GUI_View *bt) {
+    //    if( this->menuView->isOpen ) {
+    //        this->menuView->close( GUI_AppMenuCollapseTime );
+    //    }
+    //    else {
+    //        this->menuView->open( GUI_AppMenuCollapseTime );
+    //    }
+    //});
 
     menuView->setActivateView(menuButton);
 }

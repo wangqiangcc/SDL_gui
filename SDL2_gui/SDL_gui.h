@@ -44,6 +44,7 @@
 #include "GUI_EditText.h"
 #include "GUI_TextUtil.h"
 #include "GUI_TopBar.h"
+#include "GUI_TitleBar.h"
 #include "GUI_StatusBar.h"
 #include "GUI_Menu.h"
 #include "GUI_MenuBar.h"

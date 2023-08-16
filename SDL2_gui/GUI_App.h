@@ -50,6 +50,7 @@ static int _expectedHeight = 800;
 #endif
 
 class GUI_View;
+class GUI_TitleBar;
 class GUI_TopBar;
 class GUI_StatusBar;
 class GUI_Button;
@@ -60,6 +61,7 @@ class GUI_App {
 protected:
     static GUI_App *instance;
 public:
+	void createTitleBar(int options);
     void createTopBar( int options );
     void createMenuBar( int options );
     void createStatusBar( int options );
@@ -77,6 +79,7 @@ public:
     int height;
     GUI_View *topView;
 
+	GUI_TitleBar *titleBar;
     GUI_TopBar *topBar;
     GUI_StatusBar *statusBar;
     GUI_View *contentView;
